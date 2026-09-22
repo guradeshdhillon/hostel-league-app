@@ -14,9 +14,21 @@ class _HistoryCaptainState extends State<HistoryCaptain> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFDFBF7),
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 255, 180, 68),
-        title: Text('Match History'),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: 16,
+        title: const Text(
+          'Match History',
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            color: Colors.black,
+            letterSpacing: -0.5,
+          ),
+        ),
         automaticallyImplyLeading: false,
       ),
       body: StreamBuilder<QuerySnapshot>(

@@ -7,6 +7,7 @@ import 'package:rolebase/announcement.dart';
 import 'package:rolebase/history_screen.dart';
 import 'package:rolebase/ManagementDashboard.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:rolebase/AppDrawer.dart';
 
 class HomePage extends StatefulWidget {
   final String role;  // This will be passed from the LoginPage after login
@@ -74,19 +75,66 @@ class _HomePageState extends State<HomePage> {
 
 
     return Scaffold(
+      extendBody: true, // Allows the body to flow underneath the floating nav bar
+      onDrawerChanged: (isOpen) {
+        appDrawerIsOpen.value = isOpen;
+      },
+      drawer: AppDrawer(
+        isAdmin: widget.role == 'management',
+      ),
+      backgroundColor: const Color(0xFF1E1E1E), // Optional: sleek dark background if applicable
       body: Center(
         // Display the appropriate page based on selected index
         child: currentPages[_selectedIndex],
       ),
-      bottomNavigationBar: CurvedNavigationBar(
-        backgroundColor: const Color.fromARGB(255, 255, 180, 68),
-        color: Colors.white,
-        buttonBackgroundColor: Colors.white,
-        animationDuration: Duration(milliseconds: 300),
-        height: 60,
-        items: bottomNavItems,  // Dynamically assign items based on role
-        onTap: _onItemTapped,
-        index: _selectedIndex,
+      bottomNavigationBar: ValueListenableBuilder<bool>(
+        valueListenable: appDrawerIsOpen,
+        builder: (context, isDrawerOpen, child) {
+          if (isDrawerOpen) return const SizedBox.shrink();
+
+          return SafeArea(
+        child: Container(
+          margin: const EdgeInsets.only(left: 24, right: 24, bottom: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.black, // Solid black background as requested
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              )
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(bottomNavItems.length, (index) {
+              final isSelected = _selectedIndex == index;
+              return GestureDetector(
+                onTap: () => _onItemTapped(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.white : Colors.transparent, // Solid white background for active
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Icon(
+                    (bottomNavItems[index] as Icon).icon,
+                    color: isSelected ? Colors.black : Colors.white70, // Icon must be black when on white background
+                    size: 28,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+          );
+        },
       ),
     );
   }

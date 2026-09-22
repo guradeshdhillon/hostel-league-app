@@ -14,7 +14,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 
 class TopStories extends StatefulWidget {
-  const TopStories({Key? key}) : super(key: key);
+  final bool isAdmin;
+  const TopStories({Key? key, this.isAdmin = false}) : super(key: key);
 
   @override
   _TopStoriesState createState() => _TopStoriesState();
@@ -136,12 +137,145 @@ class _TopStoriesState extends State<TopStories> {
     }
   }
 
+  void _showAddStoryBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text('Add New Story', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: 'Title', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: messageController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(labelText: 'Caption', border: OutlineInputBorder()),
+                    ),
+                    const SizedBox(height: 16),
+                    if (selectedFile != null) ...[
+                      Stack(
+                        alignment: Alignment.topRight,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(selectedFile!, height: 150, width: double.infinity, fit: BoxFit.cover),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.cancel, color: Colors.red),
+                            onPressed: () {
+                              setModalState(() {
+                                selectedFile = null;
+                              });
+                            },
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.image),
+                      label: const Text('Pick Image'),
+                      onPressed: () async {
+                        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                        if (pickedFile != null) {
+                          setModalState(() {
+                            selectedFile = File(pickedFile.path);
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: const EdgeInsets.symmetric(vertical: 16)),
+                      onPressed: isLoading ? null : () async {
+                        setModalState(() => isLoading = true);
+                        if (selectedFile != null) {
+                          String fileName = DateTime.now().toIso8601String();
+                          Reference storageReference = storage.ref().child('uploads/$fileName');
+                          UploadTask uploadTask = storageReference.putFile(selectedFile!);
+                          await uploadTask.whenComplete(() async {
+                            fileUrl = await storageReference.getDownloadURL();
+                          });
+                        }
+                        
+                        final message = messageController.text;
+                        final title = titleController.text;
+
+                        if ((message.isNotEmpty || fileUrl.isNotEmpty) && title.isNotEmpty) {
+                          try {
+                            await FirebaseFirestore.instance.collection('stories').add({
+                              'title': title,
+                              'text': message.isNotEmpty ? message : null,
+                              'file': fileUrl.isNotEmpty ? fileUrl : null,
+                              'fileType': 'image',
+                              'timestamp': FieldValue.serverTimestamp(),
+                            });
+                            messageController.clear();
+                            titleController.clear();
+                            setState(() {
+                              fileUrl = '';
+                              selectedFile = null;
+                            });
+                            if (context.mounted) Navigator.pop(context);
+                          } catch (e) {
+                            print('Error sending message: $e');
+                          }
+                        }
+                        setModalState(() => isLoading = false);
+                      },
+                      child: isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Add Story', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            );
+          }
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Top Stories'),
-        backgroundColor: const Color.fromARGB(255, 255, 180, 68),
+        title: const Text(
+          'Top Stories',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+        actions: widget.isAdmin ? [
+          TextButton.icon(
+            onPressed: _showAddStoryBottomSheet,
+            icon: const Icon(Icons.add, color: Colors.blue),
+            label: const Text('Add', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+          )
+        ] : null,
       ),
       body: Column(
         children: [
@@ -171,108 +305,111 @@ class _TopStoriesState extends State<TopStories> {
                 }
 
                 final docs = snapshot.data?.docs;
-                Map<String, List<DocumentSnapshot>> groupedMessages = {};
+                if (docs == null) return const SizedBox.shrink();
 
-                for (DocumentSnapshot doc in docs!) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final timestamp = data['timestamp'] as Timestamp?;
+                return ListView.builder(
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    final data = doc.data() as Map<String, dynamic>;
+                    String image = data['file'] ?? '';
+                    String text = data['text'] ?? '';
+                    String title = data['title'] ?? 'Top Story'; 
+                    final timestamp = data['timestamp'] as Timestamp?;
+                    String formattedDate = formatDate(timestamp);
 
-                  if (timestamp == null) {
-                    continue;
-                  }
-
-                  String formattedDate = formatDate(timestamp);
-
-                  if (!groupedMessages.containsKey(formattedDate)) {
-                    groupedMessages[formattedDate] = [];
-                  }
-
-                  groupedMessages[formattedDate]!.add(doc);
-                }
-
-                List<Widget> messageWidgets = [];
-                groupedMessages.forEach((date, messages) {
-                  messageWidgets.add(
-                    Column(
-                      children: [
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              date,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12.0),
+                      color: Colors.white,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header (Avatar + Title)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+                            child: Row(
+                              children: [
+                                const CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: Color.fromARGB(255, 255, 180, 68),
+                                  child: Icon(Icons.article, color: Colors.white, size: 20),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    title,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                  ),
+                                ),
+                                ],
                               ),
                             ),
-                          ),
-                        ),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: messages.length,
-                          itemBuilder: (context, index) {
-                            DocumentSnapshot doc = messages[index];
-                            final data = doc.data() as Map<String, dynamic>;
-                            String image = data['file'] ?? '';
-                            String text = data['text'] ?? '';
-                            String title = data['title'] ?? ''; // Retrieve title
-
-                            return Card(
-                              elevation: 3,
-                              color: Colors.grey[200],
-                              child: ListTile(
-                                title: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (title.isNotEmpty) // Display title
-                                      Padding(
-                                        padding: const EdgeInsets.all(4.0),
-                                        child: Text(
-                                          title,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    if (image.isNotEmpty) // Display image
-                                      GestureDetector(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => FullScreenImage(
-                                                imageUrl: image,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        child: Image.network(
-                                          image,
-                                          width: double.infinity,
-                                          fit: BoxFit.contain,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                subtitle: text.isNotEmpty
-                                    ? Padding(
-                                        padding: const EdgeInsets.all(4.0),
-                                        child: Text(text),
-                                      )
-                                    : null,
+                          // Image
+                          if (image.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FullScreenImage(imageUrl: image),
+                                  ),
+                                );
+                              },
+                              child: Image.network(
+                                image,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: double.infinity,
+                                    height: 250,
+                                    color: Colors.grey[200],
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: const [
+                                        Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                        SizedBox(height: 8),
+                                        Text('Image unavailable', style: TextStyle(color: Colors.grey)),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                });
+                            ),
 
-                return ListView(
-                  children: messageWidgets,
+                          // Description & Date
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (text.isNotEmpty)
+                                  RichText(
+                                    text: TextSpan(
+                                      style: const TextStyle(color: Colors.black, fontSize: 14),
+                                      children: [
+                                        TextSpan(
+                                          text: '$title ',
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        TextSpan(text: text),
+                                      ],
+                                    ),
+                                  ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  formattedDate,
+                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                            ),
+                          ),
+                          const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
+                        ],
+                      ),
+                    );
+                  },
                 );
               },
             ),

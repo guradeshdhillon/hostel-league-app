@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rolebase/aboutleague.dart';
@@ -33,11 +32,11 @@ class _ManagementLandingPageState extends State<ManagementLandingPage> {
   late Timer _timer;
 
   final List<Map<String, String>> cardData = [
-    {'title': 'Black Eagles', 'logo': 'assets/logo1.png'},
     {'title': 'Anna Warriors', 'logo': 'assets/logo2.png'},
     {'title': 'Defending Titans', 'logo': 'assets/logo3.png'},
     {'title': 'White Walkers', 'logo': 'assets/logo4.png'},
     {'title': 'The Scout Regiment', 'logo': 'assets/logo5.png'},
+    {'title': 'Black Eagles', 'logo': 'assets/logo1.png'},
     {'title': 'Retro Rivals', 'logo': 'assets/logo6.png'},
     {'title': 'Rising Giants', 'logo': 'assets/logo7.png'},
     {'title': 'Management Team', 'logo': 'assets/Management.png'},
@@ -76,23 +75,26 @@ class _ManagementLandingPageState extends State<ManagementLandingPage> {
     });
   }
 
-  // Fetch photo URLs from Firestore
-  Future<List<String>> _fetchPhotoUrls() async {
-    try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection('gallery').doc('photos').get();
-      List<String> photoUrls = [];
-
-      // Assuming your photos are stored in fields pic1, pic2, pic3, ..., pic7
-      for (int i = 1; i <= 10; i++) {
-        String? url = snapshot.get('pic$i');
-        if (url != null) {
-          photoUrls.add(url);
-        }
-      }
-
-      return photoUrls;
-    } catch (e) {
-      throw Exception("Failed to fetch photos: $e");
+  Color _teamColor(String title) {
+    switch (title) {
+      case 'Black Eagles':
+        return const Color(0xFF171717);
+      case 'Anna Warriors':
+        return const Color(0xFFE81D3F);
+      case 'Defending Titans':
+        return const Color(0xFF163574);
+      case 'White Walkers':
+        return const Color(0xFF073D37);
+      case 'The Scout Regiment':
+        return const Color(0xFF278F9B);
+      case 'Retro Rivals':
+        return const Color(0xFF3D2455);
+      case 'Rising Giants':
+        return const Color(0xFFF47E2D);
+      case 'Management Team':
+        return const Color(0xFFBE185D);
+      default:
+        return Colors.black87;
     }
   }
 
@@ -132,156 +134,95 @@ class _ManagementLandingPageState extends State<ManagementLandingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFDFBF7), // Cream background to match image
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 255, 180, 68),
-        title: Row(
-          children: [
-            Text(
-              'Hi Management',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            Spacer(),
-            IconButton(
-              icon: Icon(Icons.leaderboard_rounded),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ScoreboardScreen()),
-                );
-              },
-            ),
-          ],
-        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
         automaticallyImplyLeading: false,
+        titleSpacing: 0,
         leading: Builder(
           builder: (context) {
             return IconButton(
-              icon: Icon(Icons.menu),
+              icon: const Icon(Icons.menu, color: Colors.black87),
               onPressed: () {
                 Scaffold.of(context).openDrawer();
               },
             );
           },
         ),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        title: Row(
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 255, 180, 68),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset('assets/logo.png', height: 100),
-                  SizedBox(height: 10),
-                  Text(
-                    'TNPS Hostel League',
-                    style: TextStyle(
-                      color: const Color.fromARGB(249, 0, 0, 0),
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+            const Text(
+              'Hostel league',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                color: Colors.black,
+                letterSpacing: -0.5,
               ),
             ),
-
- 
-            _buildDrawerItem(context, Icons.menu_book, 'RuleBook', () async {
-              String? pdfLink = await fetchPDFLink();
-
-              if (pdfLink != null) {
-                try {
-                  await openPDFInBrowser(pdfLink);  // Open PDF link in external browser (Chrome)
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to open the PDF in browser'))
-                  );
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Failed to load PDF link'))
+            const Spacer(),
+            InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ScoreboardScreen()),
                 );
-              }
-            }),
-            _buildDrawerItem(context, Icons.memory_outlined, 'Top Stories', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => TopStories()));
-            }),
-            _buildDrawerItem(context, Icons.book_outlined, 'About League', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => About()));
-            }),
-            _buildDrawerItem(context, Icons.quick_contacts_dialer_rounded, 'Captains', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => CaptainScreen()));
-            }),
-            _buildDrawerItem(context, Icons.call_outlined, 'Emergency Contacts', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => EmergencyContactScreen()));
-            }),
-            _buildDrawerItem(context, Icons.stay_current_portrait_rounded, 'Developers', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => DevelopersScreen()));
-            }),
-            _buildDrawerItem(context, Icons.rate_review_sharp, 'Grievance', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ManagementGrievanceScreen()));
-            }),
-            _buildDrawerItem(context, Icons.image_outlined, 'Photos', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => GalleryScreen()));
-            }),
-            _buildDrawerItem(context, Icons.logout_rounded, 'Logout', () {
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => LoginPage()));
-            }),
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black87, width: 1.5),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(Icons.leaderboard_rounded, color: Colors.black87, size: 22),
+              ),
+            ),
+            const SizedBox(width: 16),
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            FutureBuilder<List<String>>(
-              future: _fetchPhotoUrls(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No photos available'));
-                }
-
-                List<String> photoUrls = snapshot.data!;
-
-                return Container(
-                  height: 300.0, // Adjust height to cover the space of two cards
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: photoUrls.length,
-                    itemBuilder: (context, index) {
-                      return CachedNetworkImage(
-                        imageUrl: photoUrls[index],
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                        errorWidget: (context, url, error) => Icon(Icons.error),
-                      );
-                    },
+      body: Column(
+        children: [
+            // Fixed hero photo directly below the dashboard header.
+            AspectRatio(
+            aspectRatio: 1448 / 655,
+              child: ClipRect(
+                child: Transform.scale(
+                  scale: 1.08,
+                  child: Image.asset(
+                    'managmentgrp.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.topCenter,
                   ),
-                );
-              },
+                ),
+              ),
             ),
 
-            SizedBox(height: 16.0), // Spacer to separate the slider and the cards
-
-            Padding(
-              padding: EdgeInsets.all(10.0),
-                child: GridView.builder(
+            Expanded(
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: SingleChildScrollView(
+                  child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 16, 10, 10),
+                    child: GridView.builder(
                   shrinkWrap: true, 
                   physics: NeverScrollableScrollPhysics(),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 8.0,
+                    crossAxisCount: 1,
                     mainAxisSpacing: 8.0,
+                    childAspectRatio: 2.42,
                   ),
                   itemCount: cardData.length,
                   itemBuilder: (context, index) {
+                    final logoSize = cardData[index]['title'] == 'Black Eagles'
+                        ? 68.0
+                        : 76.0;
                     return GestureDetector(
                       onTap: () {
                         switch (cardData[index]['title']) {
@@ -342,49 +283,77 @@ class _ManagementLandingPageState extends State<ManagementLandingPage> {
                         }
                       },
                     child: Card(
-                      elevation: 4,
+                      color: _teamColor(cardData[index]['title'] ?? ''),
+                      elevation: 9,
+                      shadowColor: Colors.black.withOpacity(0.55),
+                      clipBehavior: Clip.antiAlias,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(18),
                       ),
-                      child: Container(
-                        padding: EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              cardData[index]['logo'] ?? 'assets/default_logo.png',
-                              height: 65,
-                              width: 65,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(Icons.image_not_supported);
-                              },
+                      child: Align(
+                        alignment: index.isEven
+                            ? Alignment.centerLeft
+                            : Alignment.centerRight,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.18),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 8),
-                            Text(
-                              cardData[index]['title'] ?? 'Unknown Title',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                              textAlign: TextAlign.center,
+                            child: Center(
+                              child: SizedBox(
+                                width: logoSize,
+                                height: logoSize,
+                                child: Image.asset(
+                                  cardData[index]['logo'] ?? 'assets/default_logo.png',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.image_not_supported);
+                                  },
+                                ),
+                              ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   );
                 },
               ),
-            ),
-          ],
-        ),
+                    ),
+                  ),
+                ),
+              ),
+        ],
       ),
     );
   }
 
-  // Helper function to create drawer items
-  ListTile _buildDrawerItem(BuildContext context, IconData icon, String title, Function onTap) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: () => onTap(),
+  // Helper function to create beautifully styled drawer items
+  Widget _buildDrawerItem(BuildContext context, IconData icon, String title, Function onTap, {bool isSelected = false, bool isDestructive = false}) {
+    final textColor = isDestructive ? const Color(0xFFD32F2F) : (isSelected ? Colors.white : Colors.black87);
+    final iconColor = isDestructive ? const Color(0xFFD32F2F) : (isSelected ? Colors.white : Colors.black54);
+    final bgColor = isSelected ? const Color(0xFF2B2826) : Colors.transparent;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        tileColor: bgColor,
+        leading: Icon(icon, color: iconColor, size: 26),
+        title: Text(title, style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 16)),
+        onTap: () => onTap(),
+      ),
     );
   }
 }
