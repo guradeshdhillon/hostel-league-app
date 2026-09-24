@@ -1,87 +1,151 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class GalleryScreen extends StatelessWidget {
-  // Fetch data from Firestore with error handling
-  Future<List<String>> _fetchPhotoUrls() async {
-    try {
-      // Get the 'photos' document from the 'gallery' collection
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance
-          .collection('gallery')
-          .doc('photos')
-          .get();
-
-      // Check if the document exists
-      if (snapshot.exists) {
-        // Extract URLs from fields like pic1, pic2, etc.
-        List<String> photoUrls = [];
-
-        // Loop through a known number of fields (in this case, 7 photos)
-        for (int i = 1; i <= 10; i++) {
-          // Access each field dynamically as 'pic1', 'pic2', etc.
-          String? url = snapshot.get('pic$i') as String?;
-          if (url != null) {
-            photoUrls.add(url);
-          }
-        }
-        return photoUrls;
-      } else {
-        // If the document doesn't exist, return an empty list
-        return [];
-      }
-    } catch (e) {
-      // Catch any errors and print/log them
-      print('Error fetching photos: $e');
-      throw Exception('Error fetching photos: $e');
-    }
-  }
+  const GalleryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFDFBF7),
       appBar: AppBar(
-        title: Text('Photo Gallery'),
-         backgroundColor:  const Color.fromARGB(255, 255, 180, 68),
+        backgroundColor: const Color(0xFFFDFBF7),
+        foregroundColor: const Color(0xFF171717),
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: 16,
+        title: const Text('Photo gallery', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
       ),
-      body: FutureBuilder<List<String>>(
-        future: _fetchPhotoUrls(),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('gallery_photos')
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            // Display the error message in the UI
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No photos available'));
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF171717)));
           }
-
-          // List of photo URLs
-          List<String> photoUrls = snapshot.data!;
-
-          // Display photos in a scrollable ListView
-          return ListView.builder(
-            itemCount: photoUrls.length,
-            itemBuilder: (context, index) {
-              return _buildPhotoItem(context, photoUrls[index]);
-            },
+          if (snapshot.hasError) {
+            return _GalleryState(
+              icon: Icons.cloud_off_outlined,
+              title: 'Unable to load photos',
+              message: snapshot.error.toString(),
+            );
+          }
+          final photos = (snapshot.data?.docs ?? [])
+              .where((document) => (document.data()['url'] ?? '').toString().isNotEmpty)
+              .toList();
+          if (photos.isEmpty) {
+            return const _GalleryState(
+              icon: Icons.photo_library_outlined,
+              title: 'No photos yet',
+              message: 'League photos will appear here when they are added.',
+            );
+          }
+          return GridView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: .78,
+            ),
+            itemCount: photos.length,
+            itemBuilder: (context, index) => _PhotoTile(data: photos[index].data()),
           );
         },
       ),
     );
   }
+}
 
-  // Widget to build each photo item
-  Widget _buildPhotoItem(BuildContext context, String url) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 8.0),
-      width: MediaQuery.of(context).size.width,
-      child: CachedNetworkImage(
-        imageUrl: url,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-        errorWidget: (context, url, error) => Icon(Icons.error),
+class _PhotoTile extends StatelessWidget {
+  const _PhotoTile({required this.data});
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = data['url'].toString();
+    final year = (data['year'] ?? '').toString();
+    return Material(
+      color: Colors.black,
+      borderRadius: BorderRadius.circular(17),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(17),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => FullScreenGalleryPhoto(url: url))),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(17),
+            boxShadow: const [BoxShadow(color: Color(0x26000000), blurRadius: 10, offset: Offset(0, 3))],
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(17)),
+                child: CachedNetworkImage(
+                  imageUrl: url,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) => const Center(child: CircularProgressIndicator(color: Color(0xFFE34848))),
+                  errorWidget: (_, __, ___) => const Center(child: Icon(Icons.broken_image_outlined, color: Color(0xFFC5C1BA), size: 34)),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(children: [
+                const Icon(Icons.photo_outlined, size: 16, color: Color(0xFFE34848)),
+                const SizedBox(width: 6),
+                Text(year.isEmpty ? 'League photo' : year, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+              ]),
+            ),
+          ]),
+        ),
       ),
     );
   }
+}
+
+class FullScreenGalleryPhoto extends StatelessWidget {
+  const FullScreenGalleryPhoto({super.key, required this.url});
+  final String url;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.black,
+    appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white, elevation: 0),
+    body: Center(
+      child: InteractiveViewer(
+        minScale: .8,
+        maxScale: 4,
+        child: CachedNetworkImage(
+          imageUrl: url,
+          fit: BoxFit.contain,
+          placeholder: (_, __) => const CircularProgressIndicator(color: Colors.white),
+          errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined, color: Colors.white, size: 46),
+        ),
+      ),
+    ),
+  );
+}
+
+class _GalleryState extends StatelessWidget {
+  const _GalleryState({required this.icon, required this.title, required this.message});
+  final IconData icon;
+  final String title;
+  final String message;
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: const Color(0xFF706B64), size: 42),
+        const SizedBox(height: 14),
+        Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 7),
+        Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFF706B64))),
+      ]),
+    ),
+  );
 }

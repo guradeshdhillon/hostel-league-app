@@ -12,6 +12,9 @@ import 'package:rolebase/history_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+const _storiesInk = Color(0xFF12233F);
+const _storiesPage = Color(0xFFF5F8FF);
+const _storiesBlue = Color(0xFF2864A7);
 
 class TopStories extends StatefulWidget {
   final bool isAdmin;
@@ -19,6 +22,74 @@ class TopStories extends StatefulWidget {
 
   @override
   _TopStoriesState createState() => _TopStoriesState();
+}
+
+class _StoriesHero extends StatelessWidget {
+  const _StoriesHero();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 154,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFDCEBFF), Color(0xFFD8F7EE)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: const Color(0xFFC8DCF9)),
+      ),
+      child: Stack(
+        children: [
+          const Positioned(
+            right: -8,
+            top: -22,
+            child: Icon(Icons.auto_stories_rounded, size: 164, color: Color(0x33728EC5)),
+          ),
+          const Positioned(
+            right: 25,
+            bottom: 20,
+            child: Icon(Icons.campaign_outlined, size: 38, color: _storiesBlue),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(21),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(.76),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'LEAGUE UPDATES',
+                    style: TextStyle(color: _storiesBlue, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .65),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'What is happening now.',
+                  style: TextStyle(color: _storiesInk, fontSize: 23, fontWeight: FontWeight.w900, letterSpacing: -.5),
+                ),
+                const SizedBox(height: 5),
+                const SizedBox(
+                  width: 235,
+                  child: Text(
+                    'Latest announcements, moments and updates from Hostel League.',
+                    style: TextStyle(color: Color(0xFF3B5474), fontSize: 13, height: 1.35),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _TopStoriesState extends State<TopStories> {
@@ -260,20 +331,22 @@ class _TopStoriesState extends State<TopStories> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: _storiesPage,
       appBar: AppBar(
         title: const Text(
           'Top Stories',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(color: _storiesInk, fontWeight: FontWeight.w900, fontSize: 25),
         ),
-        backgroundColor: Colors.white,
+        titleSpacing: 16,
+        backgroundColor: _storiesPage,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: _storiesInk),
         actions: widget.isAdmin ? [
           TextButton.icon(
             onPressed: _showAddStoryBottomSheet,
-            icon: const Icon(Icons.add, color: Colors.blue),
-            label: const Text('Add', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
+            icon: const Icon(Icons.add, color: _storiesBlue),
+            label: const Text('Add', style: TextStyle(color: _storiesBlue, fontWeight: FontWeight.w800)),
           )
         ] : null,
       ),
@@ -308,6 +381,7 @@ class _TopStoriesState extends State<TopStories> {
                 if (docs == null) return const SizedBox.shrink();
 
                 return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final doc = docs[index];
@@ -319,26 +393,33 @@ class _TopStoriesState extends State<TopStories> {
                     String formattedDate = formatDate(timestamp);
 
                     return Container(
-                      margin: const EdgeInsets.only(bottom: 12.0),
-                      color: Colors.white,
+                      margin: const EdgeInsets.only(bottom: 14.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFDCE3F0)),
+                        boxShadow: const [
+                          BoxShadow(color: Color(0x120D3065), blurRadius: 18, offset: Offset(0, 7)),
+                        ],
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Header (Avatar + Title)
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
+                            padding: const EdgeInsets.fromLTRB(16, 15, 16, 13),
                             child: Row(
                               children: [
                                 const CircleAvatar(
                                   radius: 18,
-                                  backgroundColor: Color.fromARGB(255, 255, 180, 68),
-                                  child: Icon(Icons.article, color: Colors.white, size: 20),
+                                  backgroundColor: Color(0xFFEAF3FF),
+                                  child: Icon(Icons.auto_stories_outlined, color: _storiesBlue, size: 20),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     title,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                    style: const TextStyle(color: _storiesInk, fontWeight: FontWeight.w800, fontSize: 16),
                                   ),
                                 ),
                                 ],
@@ -346,51 +427,57 @@ class _TopStoriesState extends State<TopStories> {
                             ),
                           // Image
                           if (image.isNotEmpty)
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => FullScreenImage(imageUrl: image),
-                                  ),
-                                );
-                              },
-                              child: Image.network(
-                                image,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: double.infinity,
-                                    height: 250,
-                                    color: Colors.grey[200],
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: const [
-                                        Icon(Icons.broken_image, size: 50, color: Colors.grey),
-                                        SizedBox(height: 8),
-                                        Text('Image unavailable', style: TextStyle(color: Colors.grey)),
-                                      ],
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => FullScreenImage(imageUrl: image),
                                     ),
                                   );
                                 },
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Image.network(
+                                    image,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: double.infinity,
+                                        height: 220,
+                                        color: const Color(0xFFEAF3FF),
+                                        child: const Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.broken_image_outlined, size: 42, color: Color(0xFF64738A)),
+                                            SizedBox(height: 8),
+                                            Text('Image unavailable', style: TextStyle(color: Color(0xFF64738A))),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
                               ),
                             ),
 
                           // Description & Date
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 15),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (text.isNotEmpty)
                                   RichText(
                                     text: TextSpan(
-                                      style: const TextStyle(color: Colors.black, fontSize: 14),
+                                      style: const TextStyle(color: Color(0xFF53627A), fontSize: 14, height: 1.4),
                                       children: [
                                         TextSpan(
                                           text: '$title ',
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                          style: const TextStyle(fontWeight: FontWeight.w800),
                                         ),
                                         TextSpan(text: text),
                                       ],
@@ -399,13 +486,12 @@ class _TopStoriesState extends State<TopStories> {
                                 const SizedBox(height: 6),
                                 Text(
                                   formattedDate,
-                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                  style: const TextStyle(color: Color(0xFF64738A), fontSize: 12),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 2),
                               ],
                             ),
                           ),
-                          const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
                         ],
                       ),
                     );

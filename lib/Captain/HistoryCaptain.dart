@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:rolebase/match_fixture_card.dart';
 
 
 
@@ -14,7 +15,7 @@ class _HistoryCaptainState extends State<HistoryCaptain> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDFBF7),
+      backgroundColor: const Color(0xFFF5F8FF),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -25,7 +26,7 @@ class _HistoryCaptainState extends State<HistoryCaptain> {
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w900,
-            color: Colors.black,
+            color: Color(0xFF12233F),
             letterSpacing: -0.5,
           ),
         ),
@@ -38,7 +39,7 @@ class _HistoryCaptainState extends State<HistoryCaptain> {
             .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF2864A7)));
           }
 
           final historyDocs = snapshot.data!.docs;
@@ -99,67 +100,32 @@ class _HistoryCaptainState extends State<HistoryCaptain> {
                         padding: EdgeInsets.symmetric(vertical: 4, horizontal: 10),
                         margin: EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.orangeAccent, // Background color for the header
-                          borderRadius: BorderRadius.circular(5), // Rounded corners
+                          color: const Color(0xFFEAF3FF),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFC8DCF9)),
                         ),
                         child: Text(
                           getDateHeader(date),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                            color: const Color(0xFF2864A7),
                           ),
                           textAlign: TextAlign.center, // Ensure the text is centered
                         ),
                       ),
                     ),
-                  ListTile(
-                    title: Text(
-                      '${doc['match_number'] ?? 'No match number'}',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('$team1Initials vs $team2Initials'),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            if (wonBy.isNotEmpty)
-                              Text(
-                                'Won By: $wonByInitials',
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            Text(
-                              formattedDate,
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            Text(
-                              formattedTime,
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      Navigator.of(context).push(
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+                    child: MatchFixtureCard(
+                      match: doc,
+                      dateLabel: '$formattedDate · $formattedTime',
+                      onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => MatchDetailScreen(
-                            matchData: doc,
-                          ),
+                          builder: (context) => MatchDetailScreen(matchData: doc),
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   ),
                 ],
               );

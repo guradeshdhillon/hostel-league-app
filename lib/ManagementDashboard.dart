@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rolebase/aboutleague.dart';
-import 'package:rolebase/Scoreboard.dart'; 
+import 'package:rolebase/Scoreboard.dart';
 import 'package:rolebase/AnnaWarriorsScreen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'BlackEaglesScreen.dart';
@@ -20,6 +22,8 @@ import 'LoginPage.dart';
 import 'Grivance.dart';
 import 'stories.dart';
 import 'package:rolebase/Photos.dart';
+import 'AppDrawer.dart';
+import 'team_roster_screen.dart';
 
 class ManagementLandingPage extends StatefulWidget {
   @override
@@ -42,14 +46,11 @@ class _ManagementLandingPageState extends State<ManagementLandingPage> {
     {'title': 'Management Team', 'logo': 'assets/Management.png'},
   ];
 
-
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
     _startAutoSlide();
-    
-
   }
 
   @override
@@ -99,7 +100,7 @@ class _ManagementLandingPageState extends State<ManagementLandingPage> {
   }
 
   Future<void> openPDFInBrowser(String url) async {
-    final Uri pdfUri = Uri.parse(url);  // Convert URL to Uri object
+    final Uri pdfUri = Uri.parse(url); // Convert URL to Uri object
 
     // Open the link in an external browser (e.g., Chrome)
     if (!await launchUrl(pdfUri, mode: LaunchMode.externalApplication)) {
@@ -108,241 +109,309 @@ class _ManagementLandingPageState extends State<ManagementLandingPage> {
   }
 
   Future<String?> fetchPDFLink() async {
-  try {
-    // Fetch the document from Firestore
-    DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
-        .collection('Rulebook')  // Replace with your collection name
-        .doc('PDF')      // Replace with your document ID
-        .get();
+    try {
+      // Fetch the document from Firestore
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+          .collection('Rulebook') // Replace with your collection name
+          .doc('PDF') // Replace with your document ID
+          .get();
 
-    // Check if the document exists
-    if (documentSnapshot.exists) {
-      // Extract the 'link' field from the document
-      String pdfLink = documentSnapshot['link'];  // Assuming the field is named 'link'
-      return pdfLink;  // Return the PDF link
-    } else {
-      print('Document does not exist');
+      // Check if the document exists
+      if (documentSnapshot.exists) {
+        // Extract the 'link' field from the document
+        String pdfLink =
+            documentSnapshot['link']; // Assuming the field is named 'link'
+        return pdfLink; // Return the PDF link
+      } else {
+        print('Document does not exist');
+      }
+    } catch (e) {
+      print('Error fetching document: $e');
     }
-  } catch (e) {
-    print('Error fetching document: $e');
-  }
-  
-  return null;  // Return null if there's an error or the document doesn't exist
-}
 
+    return null; // Return null if there's an error or the document doesn't exist
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDFBF7), // Cream background to match image
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        leading: Builder(
-          builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.menu, color: Colors.black87),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            );
-          },
-        ),
-        title: Row(
-          children: [
-            const Text(
-              'Hostel league',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                color: Colors.black,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const Spacer(),
-            InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ScoreboardScreen()),
+      backgroundColor: const Color(0xFFF5F8FF),
+      onDrawerChanged: (isOpen) {
+        appDrawerIsOpen.value = isOpen;
+      },
+      drawer: const AppDrawer(isAdmin: true),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Container(
+          color: const Color(0xFFF5F8FF),
+          child: AppBar(
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            automaticallyImplyLeading: false,
+            titleSpacing: 0,
+            leading: Builder(
+              builder: (context) {
+                return IconButton(
+                  icon: const Icon(Icons.menu, color: Color(0xFF12233F)),
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
                 );
               },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black87, width: 1.5),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: const Icon(Icons.leaderboard_rounded, color: Colors.black87, size: 22),
-              ),
             ),
-            const SizedBox(width: 16),
-          ],
+            title: Row(
+              children: [
+                const Text(
+                  'Hostel league',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF12233F),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const Spacer(),
+                InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ScoreboardScreen()),
+                    );
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF2864A7),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: const Icon(Icons.leaderboard_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                ),
+                const SizedBox(width: 16),
+              ],
+            ),
+          ),
         ),
       ),
       body: Column(
         children: [
-            // Fixed hero photo directly below the dashboard header.
-            AspectRatio(
-            aspectRatio: 1448 / 655,
-              child: ClipRect(
-                child: Transform.scale(
-                  scale: 1.08,
-                  child: Image.asset(
-                    'managmentgrp.png',
-                    fit: BoxFit.contain,
-                    alignment: Alignment.topCenter,
-                  ),
-                ),
+          // Fixed hero photo directly below the dashboard header.
+          SizedBox(
+            height: 220,
+            child: ClipRect(
+              child: Image.asset(
+                'managmentgrp.png',
+                fit: BoxFit.cover,
+                alignment: const Alignment(0.10, -1),
               ),
             ),
+          ),
 
-            Expanded(
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-                ),
-                child: SingleChildScrollView(
-                  child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 16, 10, 10),
-                    child: GridView.builder(
-                  shrinkWrap: true, 
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 1,
-                    mainAxisSpacing: 8.0,
-                    childAspectRatio: 2.42,
+          Expanded(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ClipRect(
+                  child: Transform.scale(
+                    scale: 2.8,
+                    alignment: Alignment.topCenter,
+                    child: Image.asset(
+                      'managmentgrp.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                    ),
                   ),
-                  itemCount: cardData.length,
-                  itemBuilder: (context, index) {
-                    final logoSize = cardData[index]['title'] == 'Black Eagles'
-                        ? 68.0
-                        : 76.0;
-                    return GestureDetector(
-                      onTap: () {
-                        switch (cardData[index]['title']) {
-                          case 'Black Eagles':
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => BlackEaglesScreen()),
-                            );
-                            break;
-                          case 'Anna Warriors':
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => AnnaWarriorsScreen()),
-                            );
-                            break;
-                          case 'Defending Titans':
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => DefendingTitansScreen()),
-                            );
-                            break;
-                          case 'White Walkers':
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => WhiteWalkersScreen()),
-                            );
-                            break;
-                          case 'The Scout Regiment':
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => TheScoutRegimentScreen()),
-                            );
-                            break;
-                          case 'Retro Rivals':
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => RetroRivalsScreen()),
-                            );
-                            break;
-                          case 'Rising Giants':
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => RisingGiantsScreen()),
-                            );
-                            break;
-                          case 'Management Team':
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => ManagementInfoScreen()),
-                            );
-                            break;
-                          default:
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => CardScreen(cardData[index]['title'] ?? 'Unknown Card')),
-                            );      
-                            break;
-                        }
-                      },
-                    child: Card(
-                      color: _teamColor(cardData[index]['title'] ?? ''),
-                      elevation: 9,
-                      shadowColor: Colors.black.withOpacity(0.55),
-                      clipBehavior: Clip.antiAlias,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Align(
-                        alignment: index.isEven
-                            ? Alignment.centerLeft
-                            : Alignment.centerRight,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.18),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: SizedBox(
-                                width: logoSize,
-                                height: logoSize,
-                                child: Image.asset(
-                                  cardData[index]['logo'] ?? 'assets/default_logo.png',
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.image_not_supported);
-                                  },
-                                ),
+                ),
+                Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(40)),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(10, 16, 10, 10),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 1.15,
+                        ),
+                        itemCount: cardData.length,
+                        itemBuilder: (context, index) {
+                          final logoSize =
+                              cardData[index]['title'] == 'Black Eagles'
+                                  ? 68.0
+                                  : 76.0;
+                          return GestureDetector(
+                            onTap: () {
+                              switch (cardData[index]['title']) {
+                                case 'Black Eagles':
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const TeamRosterScreen(teamName: 'Black Eagles', isAdmin: true)),
+                                  );
+                                  break;
+                                case 'Anna Warriors':
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const TeamRosterScreen(teamName: 'Anna Warriors', isAdmin: true)),
+                                  );
+                                  break;
+                                case 'Defending Titans':
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const TeamRosterScreen(teamName: 'Defending Titans', isAdmin: true)),
+                                  );
+                                  break;
+                                case 'White Walkers':
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const TeamRosterScreen(teamName: 'White Walkers', isAdmin: true)),
+                                  );
+                                  break;
+                                case 'The Scout Regiment':
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const TeamRosterScreen(teamName: 'The Scout Regiment', isAdmin: true)),
+                                  );
+                                  break;
+                                case 'Retro Rivals':
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const TeamRosterScreen(teamName: 'Retro Rivals', isAdmin: true)),
+                                  );
+                                  break;
+                                case 'Rising Giants':
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const TeamRosterScreen(teamName: 'Rising Giants', isAdmin: true)),
+                                  );
+                                  break;
+                                case 'Management Team':
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            ManagementInfoScreen()),
+                                  );
+                                  break;
+                                default:
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => CardScreen(
+                                            cardData[index]['title'] ??
+                                                'Unknown Card')),
+                                  );
+                                  break;
+                              }
+                            },
+                            child: Card(
+                              color: Colors.black,
+                              elevation: 7,
+                              shadowColor: Colors.black.withOpacity(0.55),
+                              clipBehavior: Clip.antiAlias,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: _teamColor(
+                                              cardData[index]['title'] ?? ''),
+                                          borderRadius:
+                                              BorderRadius.circular(14),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.center,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24),
+                                      child: Container(
+                                        width: 100,
+                                        height: 100,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black
+                                                  .withOpacity(0.18),
+                                              blurRadius: 12,
+                                              offset: const Offset(0, 5),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Center(
+                                          child: SizedBox(
+                                            width: logoSize,
+                                            height: logoSize,
+                                            child: Image.asset(
+                                              cardData[index]['logo'] ??
+                                                  'assets/default_logo.png',
+                                              fit: BoxFit.contain,
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                return const Icon(
+                                                    Icons.image_not_supported);
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
-                    ),
-                  );
-                },
-              ),
                     ),
                   ),
                 ),
-              ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
   // Helper function to create beautifully styled drawer items
-  Widget _buildDrawerItem(BuildContext context, IconData icon, String title, Function onTap, {bool isSelected = false, bool isDestructive = false}) {
-    final textColor = isDestructive ? const Color(0xFFD32F2F) : (isSelected ? Colors.white : Colors.black87);
-    final iconColor = isDestructive ? const Color(0xFFD32F2F) : (isSelected ? Colors.white : Colors.black54);
+  Widget _buildDrawerItem(
+      BuildContext context, IconData icon, String title, Function onTap,
+      {bool isSelected = false, bool isDestructive = false}) {
+    final textColor = isDestructive
+        ? const Color(0xFFD32F2F)
+        : (isSelected ? Colors.white : Colors.black87);
+    final iconColor = isDestructive
+        ? const Color(0xFFD32F2F)
+        : (isSelected ? Colors.white : Colors.black54);
     final bgColor = isSelected ? const Color(0xFF2B2826) : Colors.transparent;
 
     return Padding(
@@ -351,7 +420,9 @@ class _ManagementLandingPageState extends State<ManagementLandingPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         tileColor: bgColor,
         leading: Icon(icon, color: iconColor, size: 26),
-        title: Text(title, style: TextStyle(color: textColor, fontWeight: FontWeight.w600, fontSize: 16)),
+        title: Text(title,
+            style: TextStyle(
+                color: textColor, fontWeight: FontWeight.w600, fontSize: 16)),
         onTap: () => onTap(),
       ),
     );
@@ -366,7 +437,7 @@ class CardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-       backgroundColor:  const Color.fromARGB(255, 255, 180, 68),
+        backgroundColor: const Color.fromARGB(255, 255, 180, 68),
         title: Text(title),
       ),
       body: Center(

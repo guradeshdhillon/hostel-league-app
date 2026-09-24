@@ -10,7 +10,7 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:rolebase/AppDrawer.dart';
 
 class HomePage extends StatefulWidget {
-  final String role;  // This will be passed from the LoginPage after login
+  final String role; // This will be passed from the LoginPage after login
 
   HomePage({required this.role});
 
@@ -19,7 +19,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;  // Track the selected tab index
+  int _selectedIndex = 0; // Track the selected tab index
 
   // Pages for Management
   final List<Widget> _managementPages = [
@@ -42,7 +42,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-   @override
+  @override
   Widget build(BuildContext context) {
     // Fallback if an unrecognized role is passed
     List<Widget> currentPages;
@@ -70,19 +70,19 @@ class _HomePageState extends State<HomePage> {
 
     // Ensure selectedIndex is valid
     if (_selectedIndex >= currentPages.length) {
-      _selectedIndex = 0;  // Reset index if out of range
+      _selectedIndex = 0; // Reset index if out of range
     }
 
-
     return Scaffold(
-      extendBody: true, // Allows the body to flow underneath the floating nav bar
+      extendBody:
+          true, // Allows the body to flow underneath the floating nav bar
       onDrawerChanged: (isOpen) {
         appDrawerIsOpen.value = isOpen;
       },
       drawer: AppDrawer(
         isAdmin: widget.role == 'management',
       ),
-      backgroundColor: const Color(0xFF1E1E1E), // Optional: sleek dark background if applicable
+      backgroundColor: const Color(0xFFF5F8FF),
       body: Center(
         // Display the appropriate page based on selected index
         child: currentPages[_selectedIndex],
@@ -90,49 +90,61 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: ValueListenableBuilder<bool>(
         valueListenable: appDrawerIsOpen,
         builder: (context, isDrawerOpen, child) {
-          if (isDrawerOpen) return const SizedBox.shrink();
+          // Keep the primary navigation visible for its three tabs, but never
+          // while the side drawer is open.
+          if (isDrawerOpen) {
+            return const SizedBox.shrink();
+          }
 
-          return SafeArea(
-        child: Container(
-          margin: const EdgeInsets.only(left: 24, right: 24, bottom: 20),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.black, // Solid black background as requested
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              )
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(bottomNavItems.length, (index) {
-              final isSelected = _selectedIndex == index;
-              return GestureDetector(
-                onTap: () => _onItemTapped(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : Colors.transparent, // Solid white background for active
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Icon(
-                    (bottomNavItems[index] as Icon).icon,
-                    color: isSelected ? Colors.black : Colors.white70, // Icon must be black when on white background
-                    size: 28,
-                  ),
+          return Container(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              10,
+              16,
+              MediaQuery.paddingOf(context).bottom + 10,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0D3065).withOpacity(0.14),
+                  blurRadius: 18,
+                  offset: const Offset(0, -4),
                 ),
-              );
-            }),
-          ),
-        ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: List.generate(bottomNavItems.length, (index) {
+                final isSelected = _selectedIndex == index;
+                return GestureDetector(
+                  onTap: () => _onItemTapped(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 5),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: isSelected
+                              ? const Color(0xFF2864A7)
+                              : Colors.transparent,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                    child: Icon(
+                      (bottomNavItems[index] as Icon).icon,
+                      color: isSelected
+                          ? const Color(0xFF2864A7)
+                          : const Color(0xFF64738A),
+                      size: 28,
+                    ),
+                  ),
+                );
+              }),
+            ),
           );
         },
       ),
